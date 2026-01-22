@@ -32,7 +32,14 @@
     </a-assets>
 
     <!-- Il Marker -->
-    <a-marker type="pattern" url="./pattern-aruco.patt" vidhandler>
+        <a-marker 
+       type="pattern" 
+       url="./pattern-aruco.patt" 
+       vidhandler
+       smooth="true"
+       smoothCount="10"
+       smoothTolerance="0.01"
+       smoothThreshold="5">
       <!-- Il Video Piano -->
       <a-video src="#vid" position="0 0 0" rotation="-90 0 0" width="1" height="1"></a-video>
     </a-marker>
