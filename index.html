@@ -2,47 +2,84 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>AR Experience</title>
-  <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+  <title>Image Tracking AR</title>
   
+  <!-- Usa questa versione specifica per Image Tracking (NFT) -->
+  <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+
   <script>
-    // Questo script serve a correggere un bug comune dei video su mobile
-    // Forza la riproduzione del video quando clicchi sullo schermo
     AFRAME.registerComponent('vidhandler', {
       init: function () {
         this.toggle = false;
-        document.querySelector("#vid").play(); // Prova a far partire subito
+        document.querySelector("#vid").play();
+      },
+      tick: function () {
+        if (document.querySelector("a-nft").object3D.visible == true) {
+          if (!this.toggle) {
+            this.toggle = true;
+            document.querySelector("#vid").play();
+          }
+        } else {
+          this.toggle = false;
+          document.querySelector("#vid").pause();
+        }
       }
     });
     window.addEventListener('click', function () {
-      var v = document.querySelector("#vid");
-      v.play();
+      document.querySelector("#vid").play();
     });
   </script>
+
+  <style>
+    .arjs-loader {
+      height: 100%; width: 100%; position: absolute; top: 0; left: 0; 
+      background-color: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex; 
+      justify-content: center; align-items: center;
+    }
+    .arjs-loader div {
+      text-align: center; font-size: 1.25em; color: white;
+    }
+  </style>
 </head>
 
 <body style="margin : 0px; overflow: hidden;">
-  <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-    
-    <!-- Caricamento degli Asset -->
+  <!-- Loader mentre scarica i descrittori dell'immagine -->
+  <div class="arjs-loader">
+    <div>Loading descriptors, please wait...</div>
+  </div>
+
+  <!-- Configurazione Scene per NFT -->
+  <a-scene
+    vr-mode-ui="enabled: false;"
+    renderer="logarithmicDepthBuffer: true;"
+    embedded
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;">
+
     <a-assets>
-        <!-- Importante: 'muted' e 'playsinline' servono per iOS/Android -->
-        <video id="vid" src="planet.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted autoplay></video>
+       <video id="vid" src="planet.mp4" loop="true" crossorigin="anonymous" playsinline webkit-playsinline muted></video>
     </a-assets>
 
-    <!-- Il Marker -->
-        <a-marker 
-       type="pattern" 
-       url="./pattern-aruco.patt" 
-       vidhandler
-       smooth="true"
-       smoothCount="10"
-       smoothTolerance="0.01"
-       smoothThreshold="5">
-      <!-- Il Video Piano -->
-      <a-video src="#vid" position="0 0 0" rotation="-90 0 0" width="1" height="1"></a-video>
-    </a-marker>
+    <!-- 
+      IMPORTANTE: nell'url metti il percorso SENZA estensione file!
+      Se i file si chiamano "pinball.fset", "pinball.iset", ecc... scrivi solo "pinball"
+    -->
+    <a-nft
+      type="nft"
+      url="./planet" 
+      smooth="true"
+      smoothCount="10"
+      smoothTolerance=".01"
+      smoothThreshold="5"
+      vidhandler>
+      
+      <!-- 
+         Nota: con NFT le dimensioni sono diverse.
+         Parti con valori alti (100-200) e riduci se necessario.
+      -->
+      <a-video src="#vid" width="150" height="150" position="0 0 0" rotation="-90 0 0"></a-video>
+      
+    </a-nft>
 
     <a-entity camera></a-entity>
   </a-scene>
