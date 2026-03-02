@@ -1,99 +1,71 @@
-<!doctype html>
-<html lang="it">
+<!DOCTYPE html>
+<html>
   <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Planet AR - Image Tracking</title>
-
-    <!-- A-Frame -->
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <!-- MindAR -->
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <meta charset="utf-8">
+    <title>AR Planet Project - Root Version</title>
+    <script src="https://aframe.io/releases/1.4.1/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
-      html, body {
-        margin: 0;
-        height: 100%;
-        overflow: hidden;
-        background: #000;
-      }
-
-      .hint {
-        position: fixed;
-        left: 50%;
-        bottom: 20px;
-        transform: translateX(-50%);
-        padding: 10px 14px;
-        border-radius: 12px;
-        background: rgba(0,0,0,.6);
-        color: #fff;
-        font-family: Arial, sans-serif;
-        font-size: 14px;
-        z-index: 10;
+      .arjs-loader {
+        height: 100%; width: 100%; position: absolute; top: 0; left: 0;
+        background-color: rgba(0, 0, 0, 0.8); z-index: 9999;
+        display: flex; justify-content: center; align-items: center; color: white;
+        font-family: sans-serif;
       }
     </style>
   </head>
 
-  <body>
-    <div class="hint">Inquadra planet.jpg per vedere il video</div>
+  <body style="margin: 0px; overflow: hidden;">
+    <div class="arjs-loader"><div>Caricamento tracciamento planetario...</div></div>
 
     <a-scene
-      mindar-image="imageTargetSrc: targets.mind; autoStart: true; uiScanning: true; uiLoading: true;"
-      color-space="sRGB"
-      renderer="colorManagement: true;"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
+      vr-mode-ui="enabled: false;"
+      renderer="logarithmicDepthBuffer: true; precision: medium;"
+      embedded
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
     >
-
       <a-assets>
-        <video
-          id="planetVideo"
-          src="planet.mp4"
-          preload="auto"
-          loop
-          muted
-          playsinline
-          webkit-playsinline
-          crossorigin="anonymous"
-        ></video>
+        <video 
+          id="planet-video" 
+          src="planet.mp4" 
+          preload="auto" 
+          loop="true" 
+          crossorigin="anonymous" 
+          playsinline 
+          webkit-playsinline>
+        </video>
       </a-assets>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+      <a-nft
+        type="nft"
+        url="./planet"
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance=".01"
+        smoothThreshold="5"
+      >
+        <a-video
+          src="#planet-video"
+          width="160"
+          height="90"
+          position="0 0 0"
+          rotation="-90 0 0"
+        ></a-video>
+      </a-nft>
 
-      <!-- targetIndex: 0 = prima immagine nel targets.mind -->
-      <a-entity mindar-image-target="targetIndex: 0" id="target">
-        <a-plane
-          src="#planetVideo"
-          position="0 0 0.01"
-          width="1"
-          height="0.5625"
-        ></a-plane>
-      </a-entity>
-
+      <a-entity camera></a-entity>
     </a-scene>
 
     <script>
-      const videoEl = document.querySelector("#planetVideo");
-      const targetEl = document.querySelector("#target");
-
-      // Quando l'immagine viene riconosciuta
-      targetEl.addEventListener("targetFound", async () => {
-        try { await videoEl.play(); } catch (e) {}
-      });
-
-      // Quando l'immagine viene persa
-      targetEl.addEventListener("targetLost", () => {
-        videoEl.pause();
-        videoEl.currentTime = 0;
-      });
-
-      // Sblocco autoplay su iOS al primo tap
-      window.addEventListener("click", async () => {
-        if (videoEl.paused) {
-          try { await videoEl.play(); } catch (e) {}
+      // Gestione interazione utente per avviare l'audio/video
+      // I browser moderni richiedono un click per riprodurre media
+      window.addEventListener('click', function () {
+        const video = document.querySelector('#planet-video');
+        if (video.paused) {
+          video.play();
         }
-      }, { once: true });
+      });
     </script>
-
   </body>
 </html>
