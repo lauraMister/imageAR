@@ -1,29 +1,99 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Debug Fotocamera</title>
-</head>
-<body>
-    <h1>Test Fotocamera AR.js</h1>
-    <p id="status">Verificando...</p>
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Planet AR - Image Tracking</title>
 
-    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/aframe/aframe-ar-nft.js"></script>
+    <!-- A-Frame -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- MindAR -->
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+
+    <style>
+      html, body {
+        margin: 0;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+      }
+
+      .hint {
+        position: fixed;
+        left: 50%;
+        bottom: 20px;
+        transform: translateX(-50%);
+        padding: 10px 14px;
+        border-radius: 12px;
+        background: rgba(0,0,0,.6);
+        color: #fff;
+        font-family: Arial, sans-serif;
+        font-size: 14px;
+        z-index: 10;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div class="hint">Inquadra planet.jpg per vedere il video</div>
+
+    <a-scene
+      mindar-image="imageTargetSrc: targets.mind; autoStart: true; uiScanning: true; uiLoading: true;"
+      color-space="sRGB"
+      renderer="colorManagement: true;"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+    >
+
+      <a-assets>
+        <video
+          id="planetVideo"
+          src="planet.mp4"
+          preload="auto"
+          loop
+          muted
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- targetIndex: 0 = prima immagine nel targets.mind -->
+      <a-entity mindar-image-target="targetIndex: 0" id="target">
+        <a-plane
+          src="#planetVideo"
+          position="0 0 0.01"
+          width="1"
+          height="0.5625"
+        ></a-plane>
+      </a-entity>
+
+    </a-scene>
 
     <script>
-        // Controlla supporto fotocamera
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(() => {
-                document.getElementById('status').innerHTML = '✓ Fotocamera disponibile!';
-                console.log('✓ Fotocamera OK');
-            })
-            .catch(err => {
-                console.error('Errore fotocamera:', err.name, err.message);
-                document.getElementById('status').innerHTML = `
-                    <span style="color: red;">✗ Errore: ${err.name}</span><br>
-                    ${err.message}
-                `;
-            });
+      const videoEl = document.querySelector("#planetVideo");
+      const targetEl = document.querySelector("#target");
+
+      // Quando l'immagine viene riconosciuta
+      targetEl.addEventListener("targetFound", async () => {
+        try { await videoEl.play(); } catch (e) {}
+      });
+
+      // Quando l'immagine viene persa
+      targetEl.addEventListener("targetLost", () => {
+        videoEl.pause();
+        videoEl.currentTime = 0;
+      });
+
+      // Sblocco autoplay su iOS al primo tap
+      window.addEventListener("click", async () => {
+        if (videoEl.paused) {
+          try { await videoEl.play(); } catch (e) {}
+        }
+      }, { once: true });
     </script>
-</body>
+
+  </body>
 </html>
