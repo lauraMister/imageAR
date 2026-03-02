@@ -1,98 +1,196 @@
 <!DOCTYPE html>
-<html>
+<html lang="it">
 <head>
-  <meta charset="utf-8">
-  <title>Image Tracking AR - Automatic Video Fit</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="AR Video Tracker con NFT">
+    <title>🌍 AR Planet Video</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #000;
+            overflow: hidden;
+        }
+        canvas { display: block; }
+        
+        #ui {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            font-size: 14px;
+            color: white;
+        }
+        
+        .info-box {
+            background: rgba(0, 0, 0, 0.75);
+            padding: 15px 20px;
+            border-radius: 10px;
+            border-left: 4px solid #00d4ff;
+            backdrop-filter: blur(10px);
+        }
+        
+        .title {
+            font-weight: bold;
+            font-size: 16px;
+            margin-bottom: 8px;
+            color: #00d4ff;
+        }
+        
+        .status {
+            font-size: 13px;
+            margin: 5px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .status-icon {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        
+        .status-icon.active { 
+            background: #4ade80;
+            animation: pulse 0.5s infinite;
+        }
+        .status-icon.waiting { background: #f59e0b; }
+        .status-icon.error { background: #ef4444; }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        
+        .instructions {
+            font-size: 12px;
+            margin-top: 10px;
+            color: #a0aec0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div id="ui">
+        <div class="info-box">
+            <div class="title">🌍 AR Planet Tracker</div>
+            <div class="status">
+                <span class="status-icon waiting"></span>
+                <span id="statusText">Inizializzazione...</span>
+            </div>
+            <div id="videoStatus" class="status" style="display:none;">
+                <span class="status-icon active"></span>
+                <span>Video: Riproduzione</span>
+            </div>
+            <div class="instructions">
+                📱 Inquadra l'immagine del pianeta<br>
+                ⚠️ Assicurati buona illuminazione
+            </div>
+        </div>
+    </div>
 
-  <!-- A-Frame e AR.js NFT -->
-<script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
-<script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <!-- A-Frame + AR.js -->
+    <script src="https://aframe.io/releases/1.4.2/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ar.js@3.4.5/aframe/aframe-ar-nft.js"></script>
 
+    <a-scene 
+        embedded 
+        arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; patternRatio: 0.8;"
+        vr-mode-ui="enabled: false"
+        renderer="logarithmicDepthBuffer: true;"
+    >
+        <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-  <script>
-    // Componente per far sì che il video si adatti automaticamente al marker
-    AFRAME.registerComponent('fit-video-to-marker', {
-      init: function() {
-        const nft = this.el; // <a-nft>
-        const video = nft.querySelector('#vid');
+        <!-- NFT Marker -->
+        <a-nft 
+            type="nft"
+            url="planet"
+            scale="1 1 1"
+            position="0 0 0"
+            rotation="0 0 0"
+            id="nftMarker"
+        >
+            <!-- Video element ancorato -->
+            <a-video
+                id="videoPlayer"
+                src="#videoAsset"
+                position="0 0.3 0.1"
+                rotation="-90 0 0"
+                width="1"
+                height="0.75"
+                scale="1.2 1.2 1.2"
+                autoplay="false"
+                loop="true"
+                muted="true"
+            ></a-video>
 
-        // Assicuriamoci che il video sia pronto
-        video.addEventListener('loadedmetadata', () => {
-          // Listener per quando il marker viene trovato
-          nft.addEventListener('markerFound', () => {
-            // Calcola bounding box dell'oggetto NFT
-            const bbox = new THREE.Box3().setFromObject(nft.object3D);
-            const size = new THREE.Vector3();
-            bbox.getSize(size);
+            <!-- Sfondo semi-trasparente (opzionale) -->
+            <a-plane
+                color="#1a1a2e"
+                opacity="0.3"
+                width="1.2"
+                height="0.9"
+                position="0 0.3 -0.05"
+                rotation="-90 0 0"
+            ></a-plane>
 
-            // Imposta larghezza e altezza del video in base al marker
-            const vidEl = nft.querySelector('a-video');
-            vidEl.setAttribute('width', size.x);
-            vidEl.setAttribute('height', size.y);
+            <!-- Luce per illuminare il video -->
+            <a-light
+                type="directional"
+                intensity="1"
+                position="0 1 1"
+                castShadow="true"
+            ></a-light>
+        </a-nft>
 
-            // Posiziona il video esattamente sul marker
-            vidEl.object3D.position.set(0, 0, 0);
+        <!-- Assets -->
+        <a-assets>
+            <video id="videoAsset" src="planet.mp4" preload="auto"></video>
+        </a-assets>
+    </a-scene>
 
-            // Ruota il video parallelo al piano del marker
-            vidEl.object3D.rotation.x = -Math.PI / 2;
+    <script>
+        const nftMarker = document.getElementById('nftMarker');
+        const videoPlayer = document.getElementById('videoPlayer');
+        const statusText = document.getElementById('statusText');
+        const videoStatus = document.getElementById('videoStatus');
+        const statusIcon = document.querySelector('.status-icon');
 
-            // Mostra il video
-            video.play();
-          });
-
-          // Quando il marker scompare, pausa il video
-          nft.addEventListener('markerLost', () => {
-            video.pause();
-          });
+        // Marker trovato
+        nftMarker.addEventListener('markerFound', () => {
+            console.log('✓ Marker trovato!');
+            statusText.textContent = '✓ Marker trovato!';
+            statusIcon.className = 'status-icon active';
+            videoStatus.style.display = 'flex';
+            
+            // Avvia video con delay
+            setTimeout(() => {
+                videoPlayer.components.video.play();
+            }, 500);
         });
 
-        // Permetti autoplay anche su mobile
-        window.addEventListener('click', () => video.play());
-        window.addEventListener('touchstart', () => video.play());
-      }
-    });
-  </script>
+        // Marker perso
+        nftMarker.addEventListener('markerLost', () => {
+            console.log('✗ Marker perso');
+            statusText.textContent = '⚠ Inquadra l\'immagine...';
+            statusIcon.className = 'status-icon waiting';
+            videoStatus.style.display = 'none';
+            videoPlayer.components.video.pause();
+        });
 
-  <style>
-    .arjs-loader {
-      height: 100%; width: 100%; position: absolute; top: 0; left: 0;
-      background-color: rgba(0, 0, 0, 0.8); z-index: 9999; display: flex;
-      justify-content: center; align-items: center;
-    }
-    .arjs-loader div {
-      text-align: center; font-size: 1.25em; color: white;
-    }
-  </style>
-</head>
+        // Errore inizializzazione
+        nftMarker.addEventListener('error', (event) => {
+            console.error('Errore:', event);
+            statusText.textContent = '❌ Errore caricamento';
+            statusIcon.className = 'status-icon error';
+        });
 
-<body style="margin: 0; overflow: hidden;">
-  <div class="arjs-loader">
-    <div>Loading descriptors, please wait...</div>
-  </div>
-
-  <a-scene
-    vr-mode-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true"
-    embedded
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
-  >
-    <a-assets>
-      <video id="vid" src="planet.mp4" loop muted playsinline webkit-playsinline crossorigin="anonymous" preload="auto"></video>
-    </a-assets>
-
-    <a-nft
-      type="nft"
-      url="https://lauraMister.github.io/imageAR/planet"
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-      fit-video-to-marker
-    >
-      <a-video id="vid" src="#vid"></a-video>
-    </a-nft>
-
-    <a-entity camera></a-entity>
-  </a-scene>
+        // Log inizializzazione
+        console.log('AR Scene caricata - In attesa del marker...');
+    </script>
 </body>
 </html>
