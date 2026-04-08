@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta
       name="viewport"
-      content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
@@ -14,224 +14,197 @@
     <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
-      :root {
-        --vh: 100svh;
-      }
-
-      * {
-        box-sizing: border-box;
-        -webkit-tap-highlight-color: transparent;
-      }
-
       html,
       body {
         margin: 0;
-        padding: 0;
         width: 100%;
         height: 100%;
         overflow: hidden;
         background: #000;
         font-family: Arial, sans-serif;
-        touch-action: none;
       }
 
       body {
-        position: fixed;
+        position: relative;
+      }
+
+      .arjs-loader {
+        position: absolute;
         inset: 0;
+        z-index: 20;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.72);
+        color: #fff;
+        text-align: center;
+        padding: 24px;
       }
 
-      #app,
-      a-scene {
-        position: fixed !important;
-        inset: 0 !important;
-        width: 100vw !important;
-        height: var(--vh) !important;
-        overflow: hidden !important;
-      }
-
-      canvas,
-      video {
-        max-width: none !important;
-      }
-
-      .ui {
-        position: fixed;
+      .status {
+        position: absolute;
         left: 50%;
-        bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
         transform: translateX(-50%);
         z-index: 30;
         width: min(92vw, 420px);
-        pointer-events: none;
-      }
-
-      .pill {
-        display: inline-block;
-        width: 100%;
-        padding: 12px 14px;
-        border-radius: 16px;
-        background: rgba(0, 0, 0, 0.68);
+        padding: 10px 14px;
+        border-radius: 14px;
+        background: rgba(0, 0, 0, 0.58);
         color: #fff;
         text-align: center;
         font-size: 14px;
         line-height: 1.35;
-        backdrop-filter: blur(8px);
+        pointer-events: none;
       }
 
-      .top-status {
-        position: fixed;
-        top: calc(env(safe-area-inset-top, 0px) + 14px);
-        left: 50%;
-        transform: translateX(-50%);
-        z-index: 30;
-        width: min(92vw, 420px);
-        pointer-events: none;
+      #status-top {
+        top: calc(env(safe-area-inset-top, 0px) + 12px);
+      }
+
+      #status-bottom {
+        bottom: calc(env(safe-area-inset-bottom, 0px) + 12px);
       }
 
       .hidden {
         display: none !important;
       }
+
+      a-scene {
+        position: absolute !important;
+        inset: 0 !important;
+      }
     </style>
 
     <script>
       window.addEventListener("load", function () {
-        const docEl = document.documentElement;
-        const statusTop = document.getElementById("status-top");
-        const statusBottom = document.getElementById("status-bottom");
+        const loader = document.getElementById("loader");
+        const topStatus = document.getElementById("status-top");
+        const bottomStatus = document.getElementById("status-bottom");
         const video = document.getElementById("planet-video");
 
-        function setVh() {
-          docEl.style.setProperty("--vh", window.innerHeight + "px");
-        }
-
         function setTop(text) {
-          statusTop.textContent = text;
+          topStatus.textContent = text;
         }
 
         function setBottom(text) {
-          statusBottom.textContent = text;
+          bottomStatus.textContent = text;
+        }
+
+        function hideLoader() {
+          loader.classList.add("hidden");
         }
 
         function playVideo() {
           video.muted = true;
           video.loop = true;
-          const promise = video.play();
-          if (promise && typeof promise.catch === "function") {
-            promise.catch(function () {});
+          const p = video.play();
+          if (p && typeof p.catch === "function") {
+            p.catch(function () {});
           }
         }
 
-        function pauseVideo() {
+        function stopVideo() {
           video.pause();
           video.currentTime = 0;
         }
 
-        setVh();
-        window.addEventListener("resize", setVh);
-        window.addEventListener("orientationchange", function () {
-          setTimeout(setVh, 250);
-        });
-
-        document.addEventListener(
-          "touchmove",
-          function (e) {
-            e.preventDefault();
-          },
-          { passive: false }
-        );
-
-        AFRAME.registerComponent("video-handler", {
+        AFRAME.registerComponent("videohandler", {
           init: function () {
             const marker = this.el;
 
             marker.addEventListener("markerFound", function () {
               setTop("Immagine riconosciuta");
-              setBottom("Il video è ancorato all'immagine");
+              setBottom("Video in riproduzione");
               playVideo();
             });
 
             marker.addEventListener("markerLost", function () {
               setTop("Tracking perso");
               setBottom("Riinquadra l'immagine target");
-              pauseVideo();
+              stopVideo();
             });
           },
         });
 
         window.addEventListener("camera-init", function () {
           setTop("Fotocamera attiva");
-          setBottom("Inquadra l'immagine target");
-        });
-
-        window.addEventListener("arjs-nft-loaded", function () {
-          setTop("Target caricato");
-          setBottom("Inquadra l'immagine target per avviare il video");
+          setBottom("Se lo schermo resta nero, apri il link in Safari o Chrome");
         });
 
         window.addEventListener("camera-error", function (e) {
           const detail = e && e.detail ? JSON.stringify(e.detail) : "errore sconosciuto";
           setTop("Errore fotocamera");
-          setBottom("Apri la pagina in Safari o Chrome e consenti la camera: " + detail);
+          setBottom(detail);
+        });
+
+        window.addEventListener("arjs-nft-loaded", function () {
+          hideLoader();
+          setTop("Target caricato");
+          setBottom("Inquadra l'immagine per avviare il video");
         });
 
         video.addEventListener("loadeddata", function () {
-          video.pause();
-          video.currentTime = 0;
+          stopVideo();
         });
+
+        setTimeout(function () {
+          hideLoader();
+        }, 8000);
       });
     </script>
   </head>
 
   <body>
-    <div id="app">
-      <div class="top-status">
-        <div class="pill" id="status-top">Richiesta accesso alla fotocamera…</div>
+    <div id="loader" class="arjs-loader">
+      <div>
+        Caricamento AR in corso…<br />
+        Consenti la fotocamera quando il browser lo chiede.
       </div>
-
-      <div class="ui">
-        <div class="pill" id="status-bottom">Se compare il popup del browser, tocca Consenti. Poi inquadra l'immagine.</div>
-      </div>
-
-      <a-scene
-        vr-mode-ui="enabled: false"
-        device-orientation-permission-ui="enabled: false"
-        embedded
-        renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; precision: medium"
-        arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false"
-      >
-        <a-assets>
-          <video
-            id="planet-video"
-            src="./planet.mp4"
-            preload="auto"
-            response-type="arraybuffer"
-            crossorigin="anonymous"
-            loop
-            muted
-            playsinline
-            webkit-playsinline
-          ></video>
-        </a-assets>
-
-        <a-nft
-          type="nft"
-          url="./planet"
-          video-handler
-          smooth="true"
-          smoothCount="10"
-          smoothTolerance="0.01"
-          smoothThreshold="5"
-        >
-          <a-video
-            src="#planet-video"
-            position="50 150 -100"
-            rotation="90 0 180"
-            width="300"
-            height="169"
-          ></a-video>
-        </a-nft>
-
-        <a-entity camera></a-entity>
-      </a-scene>
     </div>
+
+    <div id="status-top" class="status">Richiesta accesso fotocamera…</div>
+    <div id="status-bottom" class="status">Apri questa pagina direttamente in Safari o Chrome.</div>
+
+    <a-scene
+      vr-mode-ui="enabled: false"
+      embedded
+      renderer="antialias: true; alpha: true; precision: medium;"
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    >
+      <a-assets>
+        <video
+          id="planet-video"
+          src="./planet.mp4"
+          preload="auto"
+          response-type="arraybuffer"
+          loop
+          crossorigin="anonymous"
+          webkit-playsinline
+          playsinline
+          autoplay
+          muted
+        ></video>
+      </a-assets>
+
+      <a-nft
+        type="nft"
+        url="./planet"
+        videohandler
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance="0.01"
+        smoothThreshold="5"
+      >
+        <a-video
+          src="#planet-video"
+          position="50 150 -100"
+          rotation="90 0 180"
+          width="300"
+          height="175"
+        ></a-video>
+      </a-nft>
+
+      <a-entity camera></a-entity>
+    </a-scene>
   </body>
 </html>
