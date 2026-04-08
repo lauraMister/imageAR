@@ -2,11 +2,14 @@
 <html lang="it">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no"
+    />
     <title>Planet AR</title>
 
-    <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/3.4.7/aframe/build/aframe-ar-nft.js"></script>
 
     <style>
       html,
@@ -20,89 +23,147 @@
         font-family: Arial, sans-serif;
       }
 
-      .arjs-loader {
+      .overlay {
         position: fixed;
         inset: 0;
-        z-index: 9999;
+        z-index: 20;
         display: flex;
         align-items: center;
         justify-content: center;
+        padding: 24px;
+        box-sizing: border-box;
         background: rgba(0, 0, 0, 0.82);
         color: #fff;
         text-align: center;
-        padding: 24px;
-        box-sizing: border-box;
       }
 
-      .arjs-loader__box {
-        max-width: 320px;
+      .overlay[hidden] {
+        display: none;
+      }
+
+      .panel {
+        max-width: 360px;
         line-height: 1.5;
       }
 
-      .arjs-loader__title {
-        font-size: 20px;
-        font-weight: 700;
-        margin-bottom: 8px;
+      h1 {
+        margin: 0 0 10px;
+        font-size: 22px;
       }
 
-      .arjs-loader__text {
+      p {
+        margin: 0 0 12px;
         font-size: 14px;
-        opacity: 0.9;
+      }
+
+      button {
+        appearance: none;
+        border: 0;
+        border-radius: 999px;
+        padding: 12px 18px;
+        font-size: 16px;
+        font-weight: 700;
+        cursor: pointer;
+      }
+
+      .hint {
+        position: fixed;
+        left: 50%;
+        bottom: 16px;
+        transform: translateX(-50%);
+        z-index: 15;
+        background: rgba(0, 0, 0, 0.65);
+        color: #fff;
+        padding: 10px 14px;
+        border-radius: 999px;
+        font-size: 13px;
+        white-space: nowrap;
+      }
+
+      .hint[hidden] {
+        display: none;
       }
     </style>
 
     <script>
       window.addEventListener("load", function () {
+        const overlay = document.getElementById("overlay");
+        const statusText = document.getElementById("status-text");
+        const startButton = document.getElementById("start-button");
+        const hint = document.getElementById("hint");
+        const video = document.getElementById("planet-video");
+
+        const setStatus = (text) => {
+          if (statusText) statusText.textContent = text;
+        };
+
+        const safePlay = () => {
+          if (!video) return;
+          video.muted = true;
+          video.loop = true;
+          const p = video.play();
+          if (p && typeof p.catch === "function") {
+            p.catch(() => {
+              // Su iPhone può servire un tap iniziale: lo gestiamo col pulsante Start.
+            });
+          }
+        };
+
         AFRAME.registerComponent("video-handler", {
           init: function () {
             const marker = this.el;
-            const video = document.querySelector("#planet-video");
-            const loader = document.querySelector(".arjs-loader");
-
-            const tryPlay = () => {
-              video
-                .play()
-                .then(() => {
-                  // autoplay avviato correttamente
-                })
-                .catch(() => {
-                  // su alcuni dispositivi il browser può richiedere un gesto utente
-                });
-            };
 
             marker.addEventListener("markerFound", function () {
-              if (loader) loader.style.display = "none";
-              tryPlay();
+              hint.hidden = true;
+              safePlay();
             });
 
             marker.addEventListener("markerLost", function () {
-              video.pause();
-            });
-
-            video.addEventListener("ended", function () {
-              video.currentTime = 0;
-              tryPlay();
+              if (video) video.pause();
+              hint.hidden = false;
             });
           },
+        });
+
+        window.addEventListener("arjs-nft-loaded", function () {
+          setStatus("Fotocamera pronta. Tocca Avvia e inquadra l'immagine.");
+          startButton.hidden = false;
+        });
+
+        window.addEventListener("camera-error", function (e) {
+          const message = e && e.detail ? JSON.stringify(e.detail) : "Errore sconosciuto";
+          setStatus("Errore fotocamera: " + message);
+        });
+
+        window.addEventListener("camera-init", function () {
+          setStatus("Caricamento completato. Tocca Avvia.");
+        });
+
+        startButton.addEventListener("click", function () {
+          safePlay();
+          overlay.hidden = true;
+          hint.hidden = false;
         });
       });
     </script>
   </head>
 
   <body>
-    <div class="arjs-loader">
-      <div class="arjs-loader__box">
-        <div class="arjs-loader__title">Caricamento AR…</div>
-        <div class="arjs-loader__text">
-          Consenti l'accesso alla fotocamera e inquadra l'immagine <strong>planet.jpg</strong>.
-        </div>
+    <div class="overlay" id="overlay">
+      <div class="panel">
+        <h1>Planet AR</h1>
+        <p id="status-text">Caricamento dei file AR in corso…</p>
+        <p>Consenti la fotocamera e poi inquadra l'immagine stampata o mostrata a schermo.</p>
+        <button id="start-button" hidden>Avvia AR</button>
       </div>
     </div>
+
+    <div class="hint" id="hint" hidden>Inquadra l'immagine target per far partire il video</div>
 
     <a-scene
       vr-mode-ui="enabled: false"
       embedded
-      renderer="antialias: true; alpha: true; precision: medium"
+      renderer="logarithmicDepthBuffer: true; antialias: true; alpha: true; precision: medium"
       arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false"
     >
       <a-assets>
@@ -131,8 +192,8 @@
       >
         <a-video
           src="#planet-video"
-          position="50 150 0"
-          rotation="-90 0 0"
+          position="50 150 -100"
+          rotation="90 0 180"
           width="300"
           height="169"
         ></a-video>
