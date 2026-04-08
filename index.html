@@ -1,308 +1,144 @@
 <!DOCTYPE html>
 <html lang="it">
-<head>
-  <meta charset="utf-8">
-  <meta
-    name="viewport"
-    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
-  >
-  <title>AR Planet Project - AR.js</title>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Planet AR</title>
 
-  <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
 
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #000;
-      font-family: sans-serif;
-    }
-
-    body {
-      position: fixed;
-      inset: 0;
-    }
-
-    #loader {
-      position: fixed;
-      inset: 0;
-      background: rgba(0, 0, 0, 0.85);
-      z-index: 9999;
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      gap: 16px;
-      color: white;
-    }
-
-    #loader .spinner {
-      width: 48px;
-      height: 48px;
-      border: 4px solid rgba(255,255,255,0.2);
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 0.9s linear infinite;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    #loader p {
-      font-size: 15px;
-      letter-spacing: 0.05em;
-      opacity: 0.85;
-      text-align: center;
-      padding: 0 20px;
-    }
-
-    #badge {
-      position: fixed;
-      top: 16px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(8px);
-      color: white;
-      font-size: 12px;
-      letter-spacing: 0.08em;
-      padding: 6px 16px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.15);
-      pointer-events: none;
-    }
-
-    #badge span {
-      color: #7dd3fc;
-      font-weight: 700;
-    }
-
-    #hint {
-      position: fixed;
-      bottom: 24px;
-      left: 50%;
-      transform: translateX(-50%);
-      z-index: 10000;
-      background: rgba(0,0,0,0.55);
-      backdrop-filter: blur(8px);
-      color: rgba(255,255,255,0.75);
-      font-size: 13px;
-      padding: 8px 20px;
-      border-radius: 999px;
-      border: 1px solid rgba(255,255,255,0.1);
-      white-space: nowrap;
-      pointer-events: none;
-      transition: opacity 0.5s;
-    }
-
-    .a-enter-vr,
-    .a-orientation-modal {
-      display: none !important;
-    }
-
-    a-scene {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    canvas.a-canvas {
-      position: fixed !important;
-      inset: 0 !important;
-      width: 100% !important;
-      height: 100% !important;
-    }
-
-    /* IMPORTANTE:
-       non forzare width+height sul video AR della camera,
-       altrimenti si deforma. */
-    video.arjs-video,
-    #arjs-video,
-    .arjs-video {
-      position: fixed !important;
-      top: 50% !important;
-      left: 50% !important;
-      transform: translate(-50%, -50%) !important;
-      width: auto !important;
-      height: auto !important;
-      min-width: 100% !important;
-      min-height: 100% !important;
-      max-width: none !important;
-      max-height: none !important;
-      object-fit: contain !important;
-      background: #000;
-    }
-  </style>
-</head>
-<body>
-  <div id="loader">
-    <div class="spinner"></div>
-    <p>Caricamento tracciamento planetario...</p>
-  </div>
-
-  <div id="badge">Libreria: <span>AR.js + A-Frame</span></div>
-  <div id="hint">📷 Punta la fotocamera sul marker del pianeta</div>
-
-  <video
-    id="planet-video"
-    src="./planet.mp4"
-    loop
-    muted
-    playsinline
-    webkit-playsinline
-    crossorigin="anonymous"
-    preload="auto"
-    style="display:none;"
-  ></video>
-
-  <a-scene
-    embedded
-    vr-mode-ui="enabled: false"
-    device-orientation-permission-ui="enabled: false"
-    renderer="logarithmicDepthBuffer: true; precision: mediump;"
-    arjs="trackingMethod: best;
-          sourceType: webcam;
-          debugUIEnabled: false;
-          videoTexture: true;
-          sourceWidth: 1280;
-          sourceHeight: 720;
-          displayWidth: 1280;
-          displayHeight: 720;"
-  >
-    <a-assets>
-      <video
-        id="planet-video-asset"
-        src="./planet.mp4"
-        loop="true"
-        muted="true"
-        playsinline
-        webkit-playsinline
-        crossorigin="anonymous"
-        preload="auto"
-      ></video>
-    </a-assets>
-
-    <a-nft
-      id="planet-target"
-      type="nft"
-      url="./planet"
-      smooth="true"
-      smoothCount="10"
-      smoothTolerance="0.01"
-      smoothThreshold="5"
-    >
-      <a-video
-        id="planet-plane"
-        src="#planet-video-asset"
-        width="1"
-        height="1"
-        position="0 0 0"
-        rotation="-90 0 0"
-      ></a-video>
-    </a-nft>
-
-    <a-entity id="camera" camera></a-entity>
-  </a-scene>
-
-  <script>
-    const loader = document.getElementById("loader");
-    const hint = document.getElementById("hint");
-    const target = document.getElementById("planet-target");
-    const plane = document.getElementById("planet-plane");
-    const video = document.getElementById("planet-video");
-    const videoAsset = document.getElementById("planet-video-asset");
-
-    let videoUnlocked = false;
-
-    function unlockVideo() {
-      if (videoUnlocked) return;
-      videoUnlocked = true;
-
-      [video, videoAsset].forEach((el) => {
-        if (!el) return;
-        el.play()
-          .then(() => {
-            el.pause();
-            el.currentTime = 0;
-          })
-          .catch(() => {});
-      });
-    }
-
-    document.addEventListener("click", unlockVideo, { once: true });
-    document.addEventListener("touchstart", unlockVideo, { once: true });
-
-    function resizePlaneFromVideo(el) {
-      if (!el || !el.videoWidth || !el.videoHeight) return;
-
-      const aspect = el.videoWidth / el.videoHeight;
-      console.log(`📹 Video: ${el.videoWidth}x${el.videoHeight}, aspect: ${aspect.toFixed(2)}`);
-
-      plane.setAttribute("width", 1);
-      plane.setAttribute("height", 1 / aspect);
-    }
-
-    video.addEventListener("loadedmetadata", () => resizePlaneFromVideo(video));
-    videoAsset.addEventListener("loadedmetadata", () => resizePlaneFromVideo(videoAsset));
-
-    target.addEventListener("markerFound", () => {
-      console.log("🎯 Marker rilevato!");
-      hint.style.opacity = "0";
-      video.play().catch(() => {});
-      videoAsset.play().catch(() => {});
-    });
-
-    target.addEventListener("markerLost", () => {
-      console.log("❌ Marker perso");
-      hint.style.opacity = "1";
-      video.pause();
-      videoAsset.pause();
-    });
-
-    window.addEventListener("arjs-video-loaded", async () => {
-      console.log("✅ Fotocamera AR caricata");
-      loader.style.display = "none";
-
-      // tenta di forzare la camera posteriore quando possibile
-      try {
-        const arVideo = document.querySelector("video.arjs-video, #arjs-video, .arjs-video");
-        if (arVideo && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-          const stream = await navigator.mediaDevices.getUserMedia({
-            video: {
-              facingMode: { ideal: "environment" }
-            },
-            audio: false
-          });
-          arVideo.srcObject = stream;
-        }
-      } catch (err) {
-        console.log("Uso stream AR.js predefinito", err);
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background: #000;
+        font-family: Arial, sans-serif;
       }
-    });
 
-    window.addEventListener("load", () => {
-      console.log("🚀 Pagina caricata");
-      setTimeout(() => {
-        if (loader.style.display !== "none") {
-          loader.style.display = "none";
-        }
-      }, 5000);
-    });
+      .arjs-loader {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(0, 0, 0, 0.82);
+        color: #fff;
+        text-align: center;
+        padding: 24px;
+        box-sizing: border-box;
+      }
 
-    window.addEventListener("error", (e) => {
-      console.error("❌ Errore:", e.message);
-    });
-  </script>
-</body>
+      .arjs-loader__box {
+        max-width: 320px;
+        line-height: 1.5;
+      }
+
+      .arjs-loader__title {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+
+      .arjs-loader__text {
+        font-size: 14px;
+        opacity: 0.9;
+      }
+    </style>
+
+    <script>
+      window.addEventListener("load", function () {
+        AFRAME.registerComponent("video-handler", {
+          init: function () {
+            const marker = this.el;
+            const video = document.querySelector("#planet-video");
+            const loader = document.querySelector(".arjs-loader");
+
+            const tryPlay = () => {
+              video
+                .play()
+                .then(() => {
+                  // autoplay avviato correttamente
+                })
+                .catch(() => {
+                  // su alcuni dispositivi il browser può richiedere un gesto utente
+                });
+            };
+
+            marker.addEventListener("markerFound", function () {
+              if (loader) loader.style.display = "none";
+              tryPlay();
+            });
+
+            marker.addEventListener("markerLost", function () {
+              video.pause();
+            });
+
+            video.addEventListener("ended", function () {
+              video.currentTime = 0;
+              tryPlay();
+            });
+          },
+        });
+      });
+    </script>
+  </head>
+
+  <body>
+    <div class="arjs-loader">
+      <div class="arjs-loader__box">
+        <div class="arjs-loader__title">Caricamento AR…</div>
+        <div class="arjs-loader__text">
+          Consenti l'accesso alla fotocamera e inquadra l'immagine <strong>planet.jpg</strong>.
+        </div>
+      </div>
+    </div>
+
+    <a-scene
+      vr-mode-ui="enabled: false"
+      embedded
+      renderer="antialias: true; alpha: true; precision: medium"
+      arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false"
+    >
+      <a-assets>
+        <video
+          id="planet-video"
+          src="./planet.mp4"
+          preload="auto"
+          response-type="arraybuffer"
+          loop
+          muted
+          autoplay
+          playsinline
+          webkit-playsinline
+          crossorigin="anonymous"
+        ></video>
+      </a-assets>
+
+      <a-nft
+        type="nft"
+        url="./planet"
+        video-handler
+        smooth="true"
+        smoothCount="10"
+        smoothTolerance="0.01"
+        smoothThreshold="5"
+      >
+        <a-video
+          src="#planet-video"
+          position="50 150 0"
+          rotation="-90 0 0"
+          width="300"
+          height="169"
+        ></a-video>
+      </a-nft>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
 </html>
