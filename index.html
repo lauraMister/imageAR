@@ -2,7 +2,10 @@
 <html lang="it">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+  >
   <title>AR Planet Project - AR.js</title>
 
   <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
@@ -15,12 +18,18 @@
       box-sizing: border-box;
     }
 
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
       background: #000;
       font-family: sans-serif;
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
+      touch-action: manipulation;
+    }
+
+    body {
+      position: fixed;
+      inset: 0;
     }
 
     #loader {
@@ -46,9 +55,7 @@
     }
 
     @keyframes spin {
-      to {
-        transform: rotate(360deg);
-      }
+      to { transform: rotate(360deg); }
     }
 
     #loader p {
@@ -64,7 +71,7 @@
       top: 16px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 100;
+      z-index: 10000;
       background: rgba(0,0,0,0.55);
       backdrop-filter: blur(8px);
       color: white;
@@ -86,7 +93,7 @@
       bottom: 24px;
       left: 50%;
       transform: translateX(-50%);
-      z-index: 100;
+      z-index: 10000;
       background: rgba(0,0,0,0.55);
       backdrop-filter: blur(8px);
       color: rgba(255,255,255,0.75);
@@ -102,6 +109,32 @@
     .a-enter-vr,
     .a-orientation-modal {
       display: none !important;
+    }
+
+    a-scene {
+      position: fixed !important;
+      inset: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+    }
+
+    video,
+    canvas {
+      max-width: none !important;
+    }
+
+    /* Fix importante per il feed camera generato da AR.js/A-Frame */
+    .arjs-video,
+    #arjs-video,
+    video.arjs-video,
+    canvas.a-canvas,
+    .a-canvas {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      object-fit: cover !important;
     }
   </style>
 </head>
@@ -131,7 +164,7 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     renderer="logarithmicDepthBuffer: true; precision: mediump;"
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
+    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
   >
     <a-assets>
       <video
@@ -173,7 +206,6 @@
     const hint = document.getElementById("hint");
     const target = document.getElementById("planet-target");
     const plane = document.getElementById("planet-plane");
-
     const video = document.getElementById("planet-video");
     const videoAsset = document.getElementById("planet-video-asset");
 
@@ -183,18 +215,13 @@
       if (videoUnlocked) return;
       videoUnlocked = true;
 
-      const tryPlayAndPause = (el) => {
+      [video, videoAsset].forEach((el) => {
         if (!el) return;
-        el.play()
-          .then(() => {
-            el.pause();
-            el.currentTime = 0;
-          })
-          .catch(() => {});
-      };
-
-      tryPlayAndPause(video);
-      tryPlayAndPause(videoAsset);
+        el.play().then(() => {
+          el.pause();
+          el.currentTime = 0;
+        }).catch(() => {});
+      });
     }
 
     document.addEventListener("click", unlockVideo, { once: true });
@@ -202,12 +229,10 @@
 
     function resizePlaneFromVideo(el) {
       if (!el || !el.videoWidth || !el.videoHeight) return;
-
       const aspect = el.videoWidth / el.videoHeight;
-      console.log(`📹 Video: ${el.videoWidth}x${el.videoHeight}, aspect: ${aspect.toFixed(2)}`);
-
       plane.setAttribute("width", 1);
       plane.setAttribute("height", 1 / aspect);
+      console.log(`📹 Video: ${el.videoWidth}x${el.videoHeight} aspect ${aspect.toFixed(2)}`);
     }
 
     video.addEventListener("loadedmetadata", () => resizePlaneFromVideo(video));
@@ -216,7 +241,6 @@
     target.addEventListener("markerFound", () => {
       console.log("🎯 Marker rilevato!");
       hint.style.opacity = "0";
-
       video.play().catch(() => {});
       videoAsset.play().catch(() => {});
     });
@@ -224,7 +248,6 @@
     target.addEventListener("markerLost", () => {
       console.log("❌ Marker perso");
       hint.style.opacity = "1";
-
       video.pause();
       videoAsset.pause();
     });
@@ -234,18 +257,18 @@
       loader.style.display = "none";
     });
 
-    window.addEventListener("load", () => {
-      console.log("🚀 Pagina caricata");
+    window.addEventListener("resize", () => {
       setTimeout(() => {
-        if (loader.style.display !== "none") {
-          loader.style.display = "none";
+        const scene = document.querySelector("a-scene");
+        if (scene && scene.renderer) {
+          scene.renderer.setSize(window.innerWidth, window.innerHeight);
         }
-      }, 5000);
+      }, 100);
     });
 
-    window.addEventListener("error", (e) => {
-      console.error("❌ Errore:", e.message);
-    });
+    setTimeout(() => {
+      loader.style.display = "none";
+    }, 5000);
   </script>
 </body>
 </html>
