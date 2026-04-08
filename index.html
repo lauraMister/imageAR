@@ -24,7 +24,6 @@
       overflow: hidden;
       background: #000;
       font-family: sans-serif;
-      touch-action: manipulation;
     }
 
     body {
@@ -114,27 +113,35 @@
     a-scene {
       position: fixed !important;
       inset: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
+      width: 100% !important;
+      height: 100% !important;
     }
 
-    video,
-    canvas {
-      max-width: none !important;
-    }
-
-    /* Fix importante per il feed camera generato da AR.js/A-Frame */
-    .arjs-video,
-    #arjs-video,
-    video.arjs-video,
-    canvas.a-canvas,
-    .a-canvas {
+    canvas.a-canvas {
       position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      object-fit: cover !important;
+      inset: 0 !important;
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* IMPORTANTE:
+       non forzare width+height sul video AR della camera,
+       altrimenti si deforma. */
+    video.arjs-video,
+    #arjs-video,
+    .arjs-video {
+      position: fixed !important;
+      top: 50% !important;
+      left: 50% !important;
+      transform: translate(-50%, -50%) !important;
+      width: auto !important;
+      height: auto !important;
+      min-width: 100% !important;
+      min-height: 100% !important;
+      max-width: none !important;
+      max-height: none !important;
+      object-fit: contain !important;
+      background: #000;
     }
   </style>
 </head>
@@ -164,7 +171,14 @@
     vr-mode-ui="enabled: false"
     device-orientation-permission-ui="enabled: false"
     renderer="logarithmicDepthBuffer: true; precision: mediump;"
-    arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false; videoTexture: true;"
+    arjs="trackingMethod: best;
+          sourceType: webcam;
+          debugUIEnabled: false;
+          videoTexture: true;
+          sourceWidth: 1280;
+          sourceHeight: 720;
+          displayWidth: 1280;
+          displayHeight: 720;"
   >
     <a-assets>
       <video
@@ -198,7 +212,7 @@
       ></a-video>
     </a-nft>
 
-    <a-entity camera></a-entity>
+    <a-entity id="camera" camera></a-entity>
   </a-scene>
 
   <script>
@@ -217,10 +231,12 @@
 
       [video, videoAsset].forEach((el) => {
         if (!el) return;
-        el.play().then(() => {
-          el.pause();
-          el.currentTime = 0;
-        }).catch(() => {});
+        el.play()
+          .then(() => {
+            el.pause();
+            el.currentTime = 0;
+          })
+          .catch(() => {});
       });
     }
 
@@ -229,10 +245,12 @@
 
     function resizePlaneFromVideo(el) {
       if (!el || !el.videoWidth || !el.videoHeight) return;
+
       const aspect = el.videoWidth / el.videoHeight;
+      console.log(`📹 Video: ${el.videoWidth}x${el.videoHeight}, aspect: ${aspect.toFixed(2)}`);
+
       plane.setAttribute("width", 1);
       plane.setAttribute("height", 1 / aspect);
-      console.log(`📹 Video: ${el.videoWidth}x${el.videoHeight} aspect ${aspect.toFixed(2)}`);
     }
 
     video.addEventListener("loadedmetadata", () => resizePlaneFromVideo(video));
@@ -252,23 +270,39 @@
       videoAsset.pause();
     });
 
-    window.addEventListener("arjs-video-loaded", () => {
+    window.addEventListener("arjs-video-loaded", async () => {
       console.log("✅ Fotocamera AR caricata");
       loader.style.display = "none";
-    });
 
-    window.addEventListener("resize", () => {
-      setTimeout(() => {
-        const scene = document.querySelector("a-scene");
-        if (scene && scene.renderer) {
-          scene.renderer.setSize(window.innerWidth, window.innerHeight);
+      // tenta di forzare la camera posteriore quando possibile
+      try {
+        const arVideo = document.querySelector("video.arjs-video, #arjs-video, .arjs-video");
+        if (arVideo && navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+          const stream = await navigator.mediaDevices.getUserMedia({
+            video: {
+              facingMode: { ideal: "environment" }
+            },
+            audio: false
+          });
+          arVideo.srcObject = stream;
         }
-      }, 100);
+      } catch (err) {
+        console.log("Uso stream AR.js predefinito", err);
+      }
     });
 
-    setTimeout(() => {
-      loader.style.display = "none";
-    }, 5000);
+    window.addEventListener("load", () => {
+      console.log("🚀 Pagina caricata");
+      setTimeout(() => {
+        if (loader.style.display !== "none") {
+          loader.style.display = "none";
+        }
+      }, 5000);
+    });
+
+    window.addEventListener("error", (e) => {
+      console.error("❌ Errore:", e.message);
+    });
   </script>
 </body>
 </html>
