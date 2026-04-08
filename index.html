@@ -3,43 +3,110 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Planet Project - AR.js Version</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #000; font-family: sans-serif; overflow: hidden; width: 100vw; height: 100vh; }
+  <title>AR Planet Project - AR.js</title>
 
-    .arjs-loader {
-      position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 9999;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      gap: 16px; color: white;
+  <script src="https://cdn.jsdelivr.net/npm/aframe@1.6.0/dist/aframe-master.min.js"></script>
+  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
     }
-    .arjs-loader .spinner {
-      width: 48px; height: 48px; border: 4px solid rgba(255,255,255,0.2);
-      border-top-color: #fff; border-radius: 50%; animation: spin 0.9s linear infinite;
+
+    body {
+      background: #000;
+      font-family: sans-serif;
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .arjs-loader p { font-size: 15px; letter-spacing: 0.05em; opacity: 0.85; }
+
+    #loader {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.85);
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      gap: 16px;
+      color: white;
+    }
+
+    #loader .spinner {
+      width: 48px;
+      height: 48px;
+      border: 4px solid rgba(255,255,255,0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.9s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    #loader p {
+      font-size: 15px;
+      letter-spacing: 0.05em;
+      opacity: 0.85;
+      text-align: center;
+      padding: 0 20px;
+    }
 
     #badge {
-      position: fixed; top: 16px; left: 50%; transform: translateX(-50%);
-      z-index: 100; background: rgba(0,0,0,0.55); backdrop-filter: blur(8px);
-      color: white; font-size: 12px; letter-spacing: 0.08em;
-      padding: 6px 16px; border-radius: 999px; border: 1px solid rgba(255,255,255,0.15);
+      position: fixed;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
+      color: white;
+      font-size: 12px;
+      letter-spacing: 0.08em;
+      padding: 6px 16px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.15);
       pointer-events: none;
     }
-    #badge span { color: #7dd3fc; font-weight: 700; }
+
+    #badge span {
+      color: #7dd3fc;
+      font-weight: 700;
+    }
 
     #hint {
-      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
-      z-index: 100; background: rgba(0,0,0,0.55); backdrop-filter: blur(8px);
-      color: rgba(255,255,255,0.75); font-size: 13px; padding: 8px 20px;
-      border-radius: 999px; border: 1px solid rgba(255,255,255,0.1);
-      white-space: nowrap; pointer-events: none; transition: opacity 0.5s;
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 100;
+      background: rgba(0,0,0,0.55);
+      backdrop-filter: blur(8px);
+      color: rgba(255,255,255,0.75);
+      font-size: 13px;
+      padding: 8px 20px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.1);
+      white-space: nowrap;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+
+    .a-enter-vr,
+    .a-orientation-modal {
+      display: none !important;
     }
   </style>
 </head>
 <body>
-  <div class="arjs-loader">
+  <div id="loader">
     <div class="spinner"></div>
     <p>Caricamento tracciamento planetario...</p>
   </div>
@@ -47,94 +114,137 @@
   <div id="badge">Libreria: <span>AR.js + A-Frame</span></div>
   <div id="hint">📷 Punta la fotocamera sul marker del pianeta</div>
 
-  <!-- A-Frame + AR.js NFT (image tracking) -->
-  <script src="https://cdn.jsdelivr.net/gh/aframevr/aframe@1c2407b26c61958baa93967b5412487cd94b290b/dist/aframe-master.min.js"></script>
-  <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
+  <video
+    id="planet-video"
+    src="./planet.mp4"
+    loop
+    muted
+    playsinline
+    webkit-playsinline
+    crossorigin="anonymous"
+    preload="auto"
+    style="display:none;"
+  ></video>
 
   <a-scene
-    vr-mode-ui="enabled: false;"
-    renderer="logarithmicDepthBuffer: true; antialias: true;"
     embedded
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+    renderer="logarithmicDepthBuffer: true; precision: mediump;"
     arjs="trackingMethod: best; sourceType: webcam; debugUIEnabled: false;"
   >
-    <!-- Asset: video del pianeta -->
     <a-assets>
       <video
-        id="planet-video"
-        src="planet.mp4"
-        preload="auto"
-        loop
-        muted
+        id="planet-video-asset"
+        src="./planet.mp4"
+        loop="true"
+        muted="true"
         playsinline
         webkit-playsinline
         crossorigin="anonymous"
+        preload="auto"
       ></video>
     </a-assets>
 
-    <!--
-      NFT anchor: punta al prefisso 'planet' (senza estensione).
-      I file planet.fset, planet.fset3, planet.iset devono essere
-      nella stessa cartella di index.html.
-
-      Regola width/height in base alle proporzioni di planet.mp4:
-        - 16:9  → width="1" height="0.5625"
-        - 1:1   → width="1" height="1"
-        - 9:16  → width="1" height="1.778"
-    -->
     <a-nft
+      id="planet-target"
       type="nft"
       url="./planet"
       smooth="true"
       smoothCount="10"
       smoothTolerance="0.01"
       smoothThreshold="5"
-      emitevents="true"
-      id="nft-anchor"
     >
       <a-video
-        src="#planet-video"
+        id="planet-plane"
+        src="#planet-video-asset"
         width="1"
-        height="0.5625"
-        position="0 0 0.01"
-        rotation="0 0 0"
+        height="1"
+        position="0 0 0"
+        rotation="-90 0 0"
       ></a-video>
     </a-nft>
 
-    <!-- Camera gestita da AR.js -->
     <a-entity camera></a-entity>
   </a-scene>
 
   <script>
-    // Nascondi loader quando i marker NFT sono pronti
-    window.addEventListener("arjs-nft-loaded", () => {
-      document.querySelector(".arjs-loader").style.display = "none";
-      console.log("✅ AR.js NFT marker caricato");
-    });
+    const loader = document.getElementById("loader");
+    const hint = document.getElementById("hint");
+    const target = document.getElementById("planet-target");
+    const plane = document.getElementById("planet-plane");
 
-    // Fallback: nascondi loader dopo 8 secondi se l'evento non scatta
-    setTimeout(() => {
-      const loader = document.querySelector(".arjs-loader");
-      if (loader) loader.style.display = "none";
-    }, 8000);
+    const video = document.getElementById("planet-video");
+    const videoAsset = document.getElementById("planet-video-asset");
 
-    // Attiva video al primo click/tap (richiesto dai browser mobili)
-    document.addEventListener("click", () => {
-      document.getElementById("planet-video").play().catch(() => {});
-    }, { once: true });
+    let videoUnlocked = false;
 
-    // Gestisci eventi found/lost sul marker
-    const nftAnchor = document.getElementById("nft-anchor");
+    function unlockVideo() {
+      if (videoUnlocked) return;
+      videoUnlocked = true;
 
-    nftAnchor.addEventListener("markerFound", () => {
+      const tryPlayAndPause = (el) => {
+        if (!el) return;
+        el.play()
+          .then(() => {
+            el.pause();
+            el.currentTime = 0;
+          })
+          .catch(() => {});
+      };
+
+      tryPlayAndPause(video);
+      tryPlayAndPause(videoAsset);
+    }
+
+    document.addEventListener("click", unlockVideo, { once: true });
+    document.addEventListener("touchstart", unlockVideo, { once: true });
+
+    function resizePlaneFromVideo(el) {
+      if (!el || !el.videoWidth || !el.videoHeight) return;
+
+      const aspect = el.videoWidth / el.videoHeight;
+      console.log(`📹 Video: ${el.videoWidth}x${el.videoHeight}, aspect: ${aspect.toFixed(2)}`);
+
+      plane.setAttribute("width", 1);
+      plane.setAttribute("height", 1 / aspect);
+    }
+
+    video.addEventListener("loadedmetadata", () => resizePlaneFromVideo(video));
+    videoAsset.addEventListener("loadedmetadata", () => resizePlaneFromVideo(videoAsset));
+
+    target.addEventListener("markerFound", () => {
       console.log("🎯 Marker rilevato!");
-      document.getElementById("planet-video").play().catch(() => {});
-      document.getElementById("hint").style.opacity = "0";
+      hint.style.opacity = "0";
+
+      video.play().catch(() => {});
+      videoAsset.play().catch(() => {});
     });
 
-    nftAnchor.addEventListener("markerLost", () => {
+    target.addEventListener("markerLost", () => {
       console.log("❌ Marker perso");
-      document.getElementById("planet-video").pause();
-      document.getElementById("hint").style.opacity = "1";
+      hint.style.opacity = "1";
+
+      video.pause();
+      videoAsset.pause();
+    });
+
+    window.addEventListener("arjs-video-loaded", () => {
+      console.log("✅ Fotocamera AR caricata");
+      loader.style.display = "none";
+    });
+
+    window.addEventListener("load", () => {
+      console.log("🚀 Pagina caricata");
+      setTimeout(() => {
+        if (loader.style.display !== "none") {
+          loader.style.display = "none";
+        }
+      }, 5000);
+    });
+
+    window.addEventListener("error", (e) => {
+      console.error("❌ Errore:", e.message);
     });
   </script>
 </body>
